@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.xingcloud.ml.json.JSONUtil;
-import com.xingcloud.ml.secutiry.MD5;
+import com.xingcloud.ml.security.MD5;
 
 /**
  * REST接口包装类
