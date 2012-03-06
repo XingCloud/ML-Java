@@ -1,15 +1,15 @@
-ML PHP SDK
+ML Java SDK
 =============
 
-使用说明
+使锟斤拷说锟斤拷
 --------
 
 	import com.xingcloud.ml.ML;
 
 	ML ml = new ML("javatest", "98d21e42db6961434c69f57694", "cn", "en", "D:\\test", true, true);
-	String word1 = ml.trans("北京");
+	String word1 = ml.trans("锟斤拷锟斤拷");
 	System.out.println(word1);
-	String word2 = ml.trans("人民大会堂");
+	String word2 = ml.trans("锟斤拷锟斤拷锟斤拷锟斤拷");
 	System.out.println(word2);
 	
 
