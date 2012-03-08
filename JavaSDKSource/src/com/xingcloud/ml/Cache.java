@@ -60,7 +60,7 @@ public class Cache {
 						if (!fileMap.get(filename).equals(
 								newFileMap.get(filename))) {
 							String filecotent = restRep.get(requestPrefix + "/"
-									+ filename, null);
+									+ filename + "?md5=" + newFileMap.get(filename), null);
 							writeFileToLocalDir(
 									ML.config.get(ML.CACHE_DIR)
 											+ File.separator

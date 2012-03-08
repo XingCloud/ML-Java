@@ -4,7 +4,7 @@
 	<property name="build.dir" location="antbuild/" />
 	<property name="lib.dir" location="lib/" />
 
-	<property name="project.name" value="ml_1.1" />
+	<property name="project.name" value="ml_1.1.1" />
 
 	<path id="classpath.dir">
 		<fileset dir="${lib.dir}">

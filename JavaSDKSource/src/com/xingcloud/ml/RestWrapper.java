@@ -30,8 +30,7 @@ public class RestWrapper {
 
 	protected Map<String, String> config;
 
-//	protected String baseURL = "http://i.xingcloud.com/api/v1";
-	protected String baseURL = "http://10.1.4.199:2012/api/v1";
+	protected String baseURL = "http://i.xingcloud.com/api/v1";
 	protected String fileInfoURL = baseURL + "/file/info";
 	protected String fileDownloadURL = baseURL + "/file/download";
 	protected String stringAddURL = baseURL + "/string/add";
