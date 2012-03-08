@@ -7,7 +7,7 @@ public class MLLogFormatter extends Formatter {
 
 	@Override
 	public String format(LogRecord record) {
-		return record.getLevel() + ":" + "      " + record.getMessage() + "\n";
+		return record.getLevel() + ":" + record.getSourceClassName()+ "-->" + record.getSourceMethodName() + "      " + record.getMessage() + "\n";
 	}
 
 }

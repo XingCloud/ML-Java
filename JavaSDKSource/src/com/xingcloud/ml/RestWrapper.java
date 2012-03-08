@@ -30,10 +30,12 @@ public class RestWrapper {
 
 	protected Map<String, String> config;
 
-	protected String baseURL = "http://i.xingcloud.com/api/v1";
+//	protected String baseURL = "http://i.xingcloud.com/api/v1";
+	protected String baseURL = "http://10.1.4.199:2012/api/v1";
 	protected String fileInfoURL = baseURL + "/file/info";
 	protected String fileDownloadURL = baseURL + "/file/download";
 	protected String stringAddURL = baseURL + "/string/add";
+	protected String fileSnapshotURL = baseURL + "/file/snapshot";
 
 	/***
 	 * rest接口包装类 无参构造函数，参数从ML的config传入
@@ -50,9 +52,9 @@ public class RestWrapper {
 	 * 
 	 */
 	public RestWrapper(String serviceName, String apiKey, String locale) {
-		this.config.put("service_name", serviceName);
-		this.config.put("api_key", apiKey);
-		this.config.put("locale", locale);
+		this.config.put(ML.SERVICE_NAME, serviceName);
+		this.config.put(ML.API_KEY, apiKey);
+		this.config.put(ML.TARGET_LANG, locale);
 	}
 
 	/***
@@ -61,32 +63,33 @@ public class RestWrapper {
 	 * @return
 	 * @throws Exception
 	 */
-	@SuppressWarnings("unchecked")
 	public Map<String, Serializable> getFileInfo() {
-		Map<String, Serializable> data = new HashMap<String, Serializable>();
-		data.put("service_name", config.get("service_name"));
-		Date date = new Date();
-		String timeStamp = Long.toString(date.getTime());
-		data.put("timestamp", timeStamp);
-		String hash = "";
-		try {
-			hash = MD5.encode(timeStamp + config.get("api_key"));
-		} catch (Exception e1) {
-			MLLogger.getLogger().error(
-					"RestWrapper getFileInfo: MD5 encode error");
-			MLLogger.getLogger().error(e1.getMessage());
+		return this.getFileInfo(null);
+	}
+	
+	/***
+	 * 获取默认文件信息
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	@SuppressWarnings("unchecked")
+	public Map<String, Serializable> getFileInfo(String filename) {
+		Map<String, Serializable> data = this.getBasicParam();
+		if(data == null) {
 			return null;
 		}
-		data.put("hash", hash);
-		data.put("locale", config.get("locale"));
+		data.put("locale", config.get(ML.TARGET_LANG));
+		if(filename != null) {
+			data.put("file_path", filename);
+		}
 		String result = this.get(this.fileInfoURL, data);
 		Map<String, Serializable> resultMaps;
 		try {
 			resultMaps = JSONUtil.toMap(result);
 		} catch (JSONException e) {
-			MLLogger.getLogger()
-					.error("RestWrapper getFileInfo: Cannot not turn file info response into json");
-			MLLogger.getLogger().error(e.getLocalizedMessage());
+			MLLogger.getLogger().severe("Cannot not turn file info response into json");
+			MLLogger.getLogger().severe(e.getLocalizedMessage());
 			return null;
 		}
 		return resultMaps;
@@ -98,9 +101,19 @@ public class RestWrapper {
 	 * @return
 	 * @throws Exception
 	 */
-	@SuppressWarnings("unchecked")
 	public Map<String, Serializable> getDefaultFile() {
-		Map<String, Serializable> fileInfoData = this.getFileInfo();
+		return this.getFile(null);
+	}
+	
+	/***
+	 * 获取文件内容
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	@SuppressWarnings("unchecked")
+	public Map<String, Serializable> getFile(String filename) {
+		Map<String, Serializable> fileInfoData = this.getFileInfo(filename);
 		String defaultFileURL = ((Map<String, String>) fileInfoData.get("data"))
 				.get("request_address");
 		String result = this.get(defaultFileURL, null);
@@ -109,9 +122,8 @@ public class RestWrapper {
 			responseData.put("filecontent",
 					(Serializable) JSONUtil.toMap(result));
 		} catch (JSONException e) {
-			MLLogger.getLogger()
-					.error("RestWrapper getDefaultFile: Cannot not turn default file response into json");
-			MLLogger.getLogger().error(e.getLocalizedMessage());
+			MLLogger.getLogger().severe("Cannot not turn default file response into json");
+			MLLogger.getLogger().severe(e.getLocalizedMessage());
 			return null;
 		}
 		responseData.put("filemd5",
@@ -126,21 +138,19 @@ public class RestWrapper {
 	 * @throws Exception
 	 */
 	public void stringAdd(String string) {
-		Map<String, Serializable> data = new HashMap<String, Serializable>();
-		data.put("service_name", config.get("service_name"));
-		Date date = new Date();
-		String timeStamp = Long.toString(date.getTime());
-		data.put("timestamp", timeStamp);
-		String hash = "";
-		try {
-			hash = MD5.encode(timeStamp + config.get("api_key"));
-		} catch (Exception e) {
-			MLLogger.getLogger().error("RestWrapper stringAdd: MD5 encode error");
-			MLLogger.getLogger().error(e.getMessage());
+		this.stringAdd(string, null);
+	}
+	
+	public void stringAdd(String string, String filename) {
+		Map<String, Serializable> data = this.getBasicParam();
+		if(data == null) {
 			return;
 		}
-		data.put("hash", hash);
 		data.put("data", string);
+		if(filename != null){
+			data.put("create", 1);
+			data.put("file_path", filename);
+		}
 		@SuppressWarnings("unused")
 		String result = this.post(stringAddURL, data);
 	}
@@ -152,33 +162,100 @@ public class RestWrapper {
 	 * @throws Exception
 	 */
 	public void stringAdd(List<String> stringList) {
+		this.stringAdd(stringList, null);
+	}
+	
+	public void stringAdd(List<String> stringList, String filename) {
+		Map<String, Serializable> data = this.getBasicParam();
+		if(data == null) {
+			return;
+		}
+		try {
+			data.put("data", JSONUtil.toJSON(stringList));
+		} catch (JSONException e) {
+			MLLogger.getLogger().severe("Cannot not turn string list into json string");
+			MLLogger.getLogger().severe(e.getLocalizedMessage());
+			return;
+		}
+		if(filename != null) {
+			data.put("create", 1);
+			data.put("file_path", filename);
+		}
+		@SuppressWarnings("unused")
+		String result = this.post(stringAddURL, data);
+	}
+	
+	public Map<String, Serializable> getFileSnapshot() {
+		return this.getFileSnapshot("");
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Map<String, Serializable> getFileSnapshot(String filename) {
+		Map<String, Serializable> data = this.getBasicParam();
+		if(data == null) {
+			return null;
+		}
+		data.put("locale", config.get(ML.TARGET_LANG));
+		if(filename != null && !filename.equalsIgnoreCase("")) {
+			data.put("file_path", filename);
+		}
+		String result = this.get(this.fileSnapshotURL, data);
+		Map<String, Serializable> resultMaps;
+		try {
+			resultMaps = JSONUtil.toMap(result);
+		} catch (JSONException e) {
+			MLLogger.getLogger().severe("Cannot not turn file info response into json");
+			MLLogger.getLogger().severe(e.getLocalizedMessage());
+			return null;
+		}
+		return resultMaps;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Map<String, Serializable> getFileSnapshot(List<String> filelist) {
+		Map<String, Serializable> data = this.getBasicParam();
+		if(data == null) {
+			return null;
+		}
+		data.put("locale", config.get(ML.TARGET_LANG));
+		StringBuffer filestring = new StringBuffer();
+		for(int i = 0; i < filelist.size(); i++) {
+			filestring.append("file_path=" + filelist.get(i) + "&");
+		}
+		filestring.delete(0, 10);
+		filestring.deleteCharAt(filestring.length()-1);
+		data.put("file_path", filestring.toString());
+		String result = this.get(this.fileSnapshotURL, data);
+		Map<String, Serializable> resultMaps;
+		try {
+			resultMaps = JSONUtil.toMap(result);
+		} catch (JSONException e) {
+			MLLogger.getLogger().severe("Cannot not turn file info response into json");
+			MLLogger.getLogger().severe(e.getLocalizedMessage());
+			return null;
+		}
+		return resultMaps;
+	}
+	
+	protected Map<String, Serializable> getBasicParam() {
 		Map<String, Serializable> data = new HashMap<String, Serializable>();
-		data.put("service_name", config.get("service_name"));
+		data.put("service_name", config.get(ML.SERVICE_NAME));
 		Date date = new Date();
 		String timeStamp = Long.toString(date.getTime());
 		data.put("timestamp", timeStamp);
 		String hash = "";
 		try {
-			hash = MD5.encode(timeStamp + config.get("api_key"));
-		} catch (Exception e) {
-			MLLogger.getLogger().error("RestWrapper stringAdd: MD5 encode error");
-			MLLogger.getLogger().error(e.getMessage());
-			return;
+			hash = MD5.encode(timeStamp + config.get(ML.API_KEY));
+		} catch (Exception e1) {
+			MLLogger.getLogger().severe("MD5 encode error");
+			MLLogger.getLogger().severe(e1.getMessage());
+			return null;
 		}
 		data.put("hash", hash);
-		try {
-			data.put("data", JSONUtil.toJSON(stringList));
-		} catch (JSONException e) {
-			MLLogger.getLogger()
-					.error("RestWrapper stringAdd: Cannot not turn string list into json string");
-			MLLogger.getLogger().error(e.getLocalizedMessage());
-			return;
-		}
-		@SuppressWarnings("unused")
-		String result = this.post(stringAddURL, data);
+		return data;
 	}
 
-	protected String post(String url, Map<String, Serializable> data) {
+	public String post(String url, Map<String, Serializable> data) {
 		try {
 			URL u = new URL(url);
 			HttpURLConnection conn = (HttpURLConnection) u.openConnection();
@@ -208,22 +285,20 @@ public class RestWrapper {
 			reader.close();
 			return responseData.toString();
 		} catch (MalformedURLException e) {
-			MLLogger.getLogger().error("RestWrapper post: URL error: " + url);
-			MLLogger.getLogger().error(e.getLocalizedMessage());
+			MLLogger.getLogger().severe("URL error: " + url);
+			MLLogger.getLogger().severe(e.getLocalizedMessage());
 		} catch (ProtocolException e) {
-			MLLogger.getLogger().error("RestWrapper post: Protocol error");
-			MLLogger.getLogger().error(e.getLocalizedMessage());
+			MLLogger.getLogger().severe("Protocol error");
+			MLLogger.getLogger().severe(e.getLocalizedMessage());
 		} catch (UnsupportedEncodingException e) {
-			MLLogger.getLogger().error(
-					"RestWrapper post: " + e.getLocalizedMessage());
+			MLLogger.getLogger().severe(e.getLocalizedMessage());
 		} catch (IOException e) {
-			MLLogger.getLogger().error(
-					"RestWrapper post: " + e.getLocalizedMessage());
+			MLLogger.getLogger().severe(e.getLocalizedMessage());
 		}
 		return null;
 	}
 
-	protected String get(String url, Map<String, Serializable> data) {
+	public String get(String url, Map<String, Serializable> data) {
 		try {
 			StringBuffer dataStr = new StringBuffer();
 			String getURL = url;
@@ -247,14 +322,12 @@ public class RestWrapper {
 			reader.close();
 			return responseData.toString();
 		} catch (MalformedURLException e) {
-			MLLogger.getLogger().error("RestWrapper get: URL error: " + url);
-			MLLogger.getLogger().error(e.getLocalizedMessage());
+			MLLogger.getLogger().severe("URL error: " + url);
+			MLLogger.getLogger().severe(e.getLocalizedMessage());
 		} catch (UnsupportedEncodingException e) {
-			MLLogger.getLogger().error(
-					"RestWrapper get: " + e.getLocalizedMessage());
+			MLLogger.getLogger().severe(e.getLocalizedMessage());
 		} catch (IOException e) {
-			MLLogger.getLogger().error(
-					"RestWrapper get: " + e.getLocalizedMessage());
+			MLLogger.getLogger().severe(e.getLocalizedMessage());
 		}
 		return null;
 	}

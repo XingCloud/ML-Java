@@ -14,17 +14,17 @@ public class MLLogger {
 
 	protected Logger log = null;
 
-	public static MLLogger getLogger() {
+	public static Logger getLogger() {
 		if (instance == null) {
 			instance = new MLLogger();
 		}
-		return instance;
+		return instance.log;
 	}
 
 	protected MLLogger() {
 		String filename = "ML.log";
 		if (ML.config.containsKey("cache_dir")) {
-			filename = ML.config.get("cache_dir") + File.separator + "ML.log";
+			filename = ML.config.get("cache_dir") + File.separator + ML.config.get("service_name") + "_" + ML.config.get("locale") +".log";
 		}
 		log = Logger.getLogger("ML");
 		log.setLevel(Level.INFO);
@@ -41,15 +41,4 @@ public class MLLogger {
 		log.addHandler(fileHandler);
 	}
 
-	public void error(String message) {
-		log.severe(message);
-	}
-
-	public void info(String message) {
-		log.info(message);
-	}
-
-	public void warn(String message) {
-		log.warning(message);
-	}
 }

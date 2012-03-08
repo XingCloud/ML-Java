@@ -1,0 +1,59 @@
+<project name="xingcloud" basedir="." default="run">
+	<property name="src.dir" location="src/" />
+	<property name="doc.dir" location="doc" />
+	<property name="build.dir" location="antbuild/" />
+	<property name="lib.dir" location="lib/" />
+
+	<property name="project.name" value="ml_1.1" />
+
+	<path id="classpath.dir">
+		<fileset dir="${lib.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<target name="clean">
+		<delete includeemptydirs="true" failonerror="false">
+			<fileset dir="${build.dir}" />
+			<fileset dir="${doc.dir}" />
+			<fileset file="${project.name}.jar" />
+		</delete>
+	</target>
+
+	<target name="prepare">
+		<mkdir dir="${doc.dir}" />
+		<mkdir dir="${build.dir}" />
+	</target>
+
+	<target name="compile">
+		<mkdir dir="${build.dir}/classes" />
+		<javac encoding="utf-8" destdir="${build.dir}/classes" source="1.6" target="1.6" debug="true" deprecation="false" optimize="false" failonerror="true">
+			<src path="${src.dir}" />
+			<classpath refid="classpath.dir" />
+		</javac>
+		<copy todir="${build.dir}/classes">
+			<fileset dir="${src.dir}" excludes="**/*.java" />
+		</copy>
+	</target>
+
+	<target name="build">
+		<jar destfile="${project.name}.jar">
+			<fileset dir="${build.dir}/classes" />
+		</jar>
+		<delete dir="${build.dir}"/>
+	</target>
+
+	<target name="doc">
+		<javadoc destdir="${doc.dir}" access="protected" encoding="UTF-8" docencoding="UTF-8" splitindex="false" use="false" version="true" windowtitle="XingCloud Java SDK API" linksource="true">
+			<packageset dir="${src.dir}">
+			</packageset>
+			<classpath>
+				<fileset dir="${lib.dir}">
+					<include name="**/*.jar" />
+				</fileset>
+			</classpath>
+		</javadoc>
+	</target>
+
+	<target name="run" depends="clean,prepare,compile,build,doc" />
+</project>

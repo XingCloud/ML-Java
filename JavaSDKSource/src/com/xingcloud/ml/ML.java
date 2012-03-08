@@ -12,6 +12,14 @@ import java.util.Map;
 public class ML {
 
 	public static Map<String, String> config = new HashMap<String, String>();
+	public static String SERVICE_NAME = "service_name";
+	public static String API_KEY = "api_key";
+	public static String SOURCE_LANG = "source_lang";
+	public static String TARGET_LANG = "locale";
+	public static String AUTO_UPDATE_FILE = "auto_update_file";
+	public static String AUTO_ADD_STRING = "auto_add_string";
+	public static String CACHE_DIR = "cache_dir";
+	public static String WORD_FILE_SUFFIX = ".json";
 
 	protected Cache cache = null;
 	protected RestWrapper restRe = new RestWrapper();
@@ -38,24 +46,22 @@ public class ML {
 	public ML(String serviceName, String apiKey, String sourceLang,
 			String targetLang, String cacheDir, Boolean autoUpdateFile,
 			Boolean autoAddString) {
-		ML.config.put("service_name", serviceName);
-		ML.config.put("api_key", apiKey);
-		ML.config.put("source_lang", sourceLang);
-		ML.config.put("locale", targetLang);
-		ML.config.put("auto_update_file", autoUpdateFile.toString());
-		ML.config.put("auto_add_string", autoAddString.toString());
-		ML.config.put("cache_dir", cacheDir);
+		ML.config.put(ML.SERVICE_NAME, serviceName);
+		ML.config.put(ML.API_KEY, apiKey);
+		ML.config.put(ML.SOURCE_LANG, sourceLang);
+		ML.config.put(ML.TARGET_LANG, targetLang);
+		ML.config.put(ML.AUTO_UPDATE_FILE, autoUpdateFile.toString());
+		ML.config.put(ML.AUTO_ADD_STRING, autoAddString.toString());
+		ML.config.put(ML.CACHE_DIR, cacheDir);
 		this.initCache();
 	}
 
 	protected void initCache() {
 		cache = new Cache();
-		if (Boolean.parseBoolean(ML.config.get("auto_update_file"))) {
+		if (Boolean.parseBoolean(ML.config.get(ML.AUTO_UPDATE_FILE))) {
 			cache.updateLocalWords();
-			cache.cacheLocal();
-		} else {
-			cache.getLocalWords();
 		}
+		cache.getLocalWords();
 	}
 
 	/***
@@ -67,15 +73,23 @@ public class ML {
 	 * @throws Exception
 	 */
 	public String trans(String word) {
-		if (ML.config.get("source_lang").equalsIgnoreCase(
-				ML.config.get("target_lang"))) {
+		return this.trans(word, null);
+	}
+
+	public String trans(String word, String filename) {
+		if (ML.config.get(ML.SOURCE_LANG).equalsIgnoreCase(
+				ML.config.get(ML.TARGET_LANG))) {
 			return word;
 		}
 		if (this.cache.words.containsKey(word)) {
 			return this.cache.words.get(word);
 		} else {
-			if (Boolean.parseBoolean(ML.config.get("auto_add_string"))) {
-				restRe.stringAdd(word);
+			if (Boolean.parseBoolean(ML.config.get(ML.AUTO_ADD_STRING))) {
+				if (filename == null) {
+					restRe.stringAdd(word);
+				} else {
+					restRe.stringAdd(word, filename + ML.WORD_FILE_SUFFIX);
+				}
 			}
 			return word;
 		}
